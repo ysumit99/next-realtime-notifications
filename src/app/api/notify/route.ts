@@ -4,12 +4,31 @@ import { Client } from "@upstash/qstash";
 import { nanoid } from "nanoid";
 import { AppNotification } from "@/lib/types";
 
-const qstash = new Client({ token: process.env.QSTASH_TOKEN || "" });
+const qstash = new Client({
+  token: process.env.QSTASH_TOKEN!,
+  // Explicitly targets the independent US regional infrastructure
+  baseUrl: "https://qstash-us-east-1.upstash.io", 
+});
+
+// Helper function to dynamically map the public routing domain
+const getBaseUrl = (req: Request) => {
+  // 1. Prefer explicit environment variables for cloud tunneled routes
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  // 2. Fallback safely to native request headers
+  const host = req.headers.get("host");
+  const protocol = host?.includes("localhost") ? "http" : "https";
+  return `${protocol}://${host}`;
+};
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { title, message, type = "info", channels = ["in-app"] } = body;
+
+    // Resolve the active base address securely
+    const baseUrl = getBaseUrl(req);
 
     // 1. Construct the notification payload
     const notification: AppNotification = {
@@ -28,28 +47,23 @@ export async function POST(req: Request) {
       member: JSON.stringify(notification),
     });
 
-    // Optional: Set a TTL or cap the list to prevent infinite storage growth
-    // await redis.zremrangebyrank("notifications:feed", 0, -101); // Keep last 100
-
     // 3. Fan-out Pattern via QStash
-    // If we are targeting multiple delivery avenues, we publish to a QStash topic or direct endpoints
     if (channels.includes("email")) {
-      // Simulate queuing an email task
+      // Simulate queuing an email task using the secure Base URL
       await qstash.publishJSON({
-        url: `https://${req.headers.get("host")}/api/worker/email`,
+        url: `${baseUrl}/api/worker/email`,
         body: { notification },
       });
     }
 
     if (channels.includes("sms")) {
-      // Simulate queuing an SMS task
+      // Simulate queuing an SMS task using the secure Base URL
       await qstash.publishJSON({
-        url: `https://${req.headers.get("host")}/api/worker/sms`,
+        url: `${baseUrl}/api/worker/sms`,
         body: { notification },
       });
     }
 
-    // For In-App real-time delivery, if using a custom WS server or external provider:
     // Publish to Redis Pub/Sub channel so the WS server picks it up instantly
     await redis.publish("realtime:notifications", JSON.stringify(notification));
 
