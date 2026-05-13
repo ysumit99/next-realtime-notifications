@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useTransition } from "
 import { AppNotification, ConnectionStatus as StatusType, NotificationType } from "@/lib/types";
 import ConnectionStatus from "@/components/ConnectionStatus";
 import NotificationItem from "@/components/NotificationItem";
-import { Bell, Send, CheckAll, Trash2 } from "lucide-react";
+import { Bell, Send, CheckCheck, Trash2 } from "lucide-react";
 
 export default function Home() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -261,7 +261,7 @@ export default function Home() {
                     title="Mark all as read"
                     className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
                   >
-                    <CheckAll className="w-4 h-4" />
+                    <CheckCheck className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => setNotifications([])}
