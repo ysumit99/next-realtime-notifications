@@ -19,26 +19,34 @@ This project serves as a reference implementation for high-throughput, fault-tol
 
 ## 🔄 System Flow & Topology
 
-[ Trigger Event / API Gateway ]
-│
-▼
-( POST /api/notify )
-│
-├──────────────────────────┐
-▼ ▼
-[ Upstash Redis ] [ Upstash QStash Queue ]
-(State Persistence) (Distributed Fan-Out)
-│
-┌────────────────────────┼────────────────────────┐
-▼ ▼ ▼
-[ Redis Pub/Sub ] [ Simulated Worker ] [ Simulated Worker ]
-(In-App Push) (Email Delivery) (SMS Transmission)
-│
-▼
-[ WebSocket Proxy ]
-│
-▼
-[ Next.js Client UI ]
+```mermaid
+flowchart TD
+    Client[Trigger Event / API Gateway] -->|POST /api/notify| Gateway(API Route Gate)
+
+    subgraph Persistence Layer
+        Gateway -->|ZADD| Redis[(Upstash Redis Feed)]
+    end
+
+    subgraph Fan-Out Engine
+        Gateway -->|Publish JSON| QStash{Upstash QStash}
+    end
+
+    subgraph Delivery Channels
+        QStash -->|Webhook| WorkerEmail[Simulated Email Worker]
+        QStash -->|Webhook| WorkerSMS[Simulated SMS Worker]
+        Gateway -->|Pub/Sub| WSProxy[WebSocket Proxy / SSE]
+    end
+
+    WSProxy -->|Real-time Push| UI[Next.js Client UI]
+
+    classDef default fill:#0f172a,stroke:#334155,stroke-width:1px,color:#f8fafc;
+    classDef engine fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#e0e7ff;
+    classDef storage fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#d1fae5;
+
+    class QStash engine;
+    class Redis storage;
+
+```
 
 ---
 
