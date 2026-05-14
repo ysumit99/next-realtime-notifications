@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import { AppNotification } from "@/lib/types";
 
+// CRITICAL: Forces Vercel to query fresh Redis state on every page load
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     // Fetch top 50 most recent notifications sorted descending
