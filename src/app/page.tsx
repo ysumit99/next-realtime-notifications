@@ -38,19 +38,21 @@ export default function Home() {
     loadHistory();
   }, []);
 
-  // 2. Client-Side WebSocket Integration featuring Exponential Backoff
-  const connectWebSocket = useCallback(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/api/ws";
+  // 2. Client-Side Server-Sent Events (SSE) Integration
+  const connectEventSource = useCallback(() => {
+    // Dynamically point to your absolute stream path
+    const sseUrl = "/api/ws";
     
     setStatus("reconnecting");
-    const ws = new WebSocket(wsUrl);
+    const eventSource = new EventSource(sseUrl);
 
-    ws.onopen = () => {
+    // Initial Stream connection verification
+    eventSource.onopen = () => {
       setStatus("connected");
-      reconnectAttempts.current = 0;
     };
 
-    ws.onmessage = (event) => {
+    // Standard payloads broadcasted without assigned custom event flags route here
+    eventSource.onmessage = (event) => {
       try {
         const newNotification: AppNotification = JSON.parse(event.data);
         setNotifications((prev) => [newNotification, ...prev]);
@@ -59,29 +61,29 @@ export default function Home() {
       }
     };
 
-    ws.onclose = () => {
-      setStatus("offline");
-      // Trigger Exponential Backoff retry routine
-      if (reconnectAttempts.current < maxAttempts) {
-        const timeout = Math.pow(2, reconnectAttempts.current) * 1000;
-        reconnectAttempts.current += 1;
-        setTimeout(() => connectWebSocket(), timeout);
-      }
+    // Intercept custom stream directives (like our open connection validation payload)
+    eventSource.addEventListener("connected", (event) => {
+      setStatus("connected");
+    });
+
+    eventSource.onerror = () => {
+      // EventSource manages continuous background connection cycling natively
+      setStatus("reconnecting");
     };
 
-    ws.onerror = () => {
-      ws.close();
-    };
-
-    wsRef.current = ws;
+    // Store references cleanly to allow state management hook cleanups
+    // @ts-ignore - Safely bind the generic stream tracker to the hook reference pool
+    wsRef.current = eventSource;
   }, []);
 
   useEffect(() => {
-    connectWebSocket();
+    connectEventSource();
     return () => {
-      if (wsRef.current) wsRef.current.close();
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
-  }, [connectWebSocket]);
+  }, [connectEventSource]);
 
   // 3. Dispatching Notification Engine
   const handleTrigger = async (e: React.FormEvent) => {
