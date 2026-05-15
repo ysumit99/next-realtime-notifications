@@ -61,6 +61,10 @@ flowchart TD
 
 ---
 
+### Demo [Live App](https://next-realtime-notifications.vercel.app/)
+
+---
+
 ## 🚀 Getting Started
 
 ### 1. Clone the Repository
