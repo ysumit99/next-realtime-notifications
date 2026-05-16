@@ -47,6 +47,11 @@ export async function POST(req: Request) {
       member: JSON.stringify(notification),
     });
 
+    // ✨ NEW: The Auto-Pruner. 
+    // This tells Redis: "Remove everything from index 0 up to the 11th item from the end."
+    // It guarantees your database never holds more than the 10 most recent events.
+    await redis.zremrangebyrank("notifications:feed", 0, -11);
+    
     // 3. Fan-out Pattern via QStash
     if (channels.includes("email")) {
       // Simulate queuing an email task using the secure Base URL
