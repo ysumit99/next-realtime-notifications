@@ -61,7 +61,7 @@ flowchart TD
 
 ---
 
-### Demo [Live App](https://next-realtime-notifications.vercel.app/)
+### Live Demo [StaffNotify App](https://next-realtime-notifications.vercel.app/)
 
 ---
 
