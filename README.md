@@ -11,7 +11,7 @@ This project serves as a reference implementation for high-throughput, fault-tol
 ### Core Systems Patterns Demonstrated
 
 - **Event-Driven Fan-Out:** Ingestion endpoints immediately offload payloads to serverless message queues for distributed processing across distinct channels (In-App, Email, SMS).
-- **Edge State Persistence:** Employs optimized Redis sorted sets (`ZSET`) to maintain chronological feeds with predictable time complexity ($O(\log N)$) and auto-pruning.
+- **Edge State Persistence:** Employs optimized Redis sorted sets (`ZSET`) to maintain chronological feeds with predictable time complexity (`O(log N)`) and auto-pruning.
 - **Client-Side Resiliency:** Implements native WebSocket connection managers featuring **Exponential Backoff** algorithms to handle silent disconnects and network drops without overwhelming ingestion gateways upon recovery.
 - **Idempotency & Rate Limiting:** Built-in safeguards to prevent duplicate pipeline executions and secure ingestion points against payload abuse.
 
