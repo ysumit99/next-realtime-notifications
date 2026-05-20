@@ -73,3 +73,13 @@ flowchart TD
 git clone [https://github.com/yourusername/next-realtime-notifications.git](https://github.com/yourusername/next-realtime-notifications.git)
 cd next-realtime-notifications
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+_Designed and engineered by [Sumit Yadav](https://ysumit99.github.io/) · [Blog](https://sumityadav-dev.vercel.app) · [LinkedIn](https://www.linkedin.com/in/sumityadav-dev/) · [GitHub](https://github.com/ysumit99/) © 2026_
