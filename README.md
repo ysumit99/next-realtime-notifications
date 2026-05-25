@@ -1,6 +1,6 @@
 # Next.js Real-Time Notification Engine
 
-A production-ready, event-driven notification system demonstrating distributed systems patterns, real-time client ingestion, state persistence at the edge, and robust client-side resiliency.
+A production-ready, event-driven notification system demonstrating distributed systems patterns, asynchronous fan-out delivery, real-time client synchronization, edge persistence, and resilient reconnect handling.
 
 ---
 
@@ -270,6 +270,8 @@ This project was built to explore:
 - Fault-tolerant reconnect strategies
 - Serverless infrastructure design
 - Scalable notification pipelines
+
+---
 
 ## ⚡ Key Engineering Highlights
 
