@@ -6,15 +6,17 @@ A production-ready, event-driven notification system demonstrating distributed s
 
 ## 🎯 Architecture Overview
 
-This project demonstrates scalable real-time notification delivery patterns using Redis persistence, WebSocket/SSE synchronization, and event-driven client updates.
+This project serves as a reference implementation for high-throughput, fault-tolerant notification delivery. It decouples event triggering from client delivery using a **Fan-Out Message Queue architecture**, ensuring non-blocking API flows and reliable multi-channel distribution.
 
 ### Core Systems Patterns Demonstrated
 
-- **Event-Driven Notification Flow:** Notification events are asynchronously propagated to connected clients with minimal blocking.
-- **Edge State Persistence:** Uses optimized Redis sorted sets (`ZSET`) to maintain chronological notification feeds with predictable time complexity (`O(log N)`).
-- **Client-Side Resiliency:** Implements native reconnect handling with **Exponential Backoff** strategies for robust real-time communication recovery.
-- **Scalable Real-Time Delivery:** Designed for low-latency notification propagation using serverless-compatible real-time patterns.
-- **Type-Safe Infrastructure:** Fully typed TypeScript architecture for predictable client-server communication.
+- **Event-Driven Fan-Out:** Ingestion endpoints immediately offload payloads to serverless message queues for distributed processing across distinct channels (In-App, Email, SMS).
+
+- **Edge State Persistence:** Employs optimized Redis sorted sets (`ZSET`) to maintain chronological feeds with predictable time complexity (`O(log N)`) and auto-pruning.
+
+- **Client-Side Resiliency:** Implements native WebSocket connection managers featuring **Exponential Backoff** algorithms to handle silent disconnects and network drops without overwhelming ingestion gateways upon recovery.
+
+- **Idempotency & Rate Limiting:** Architectural provisions help prevent duplicate pipeline executions and secure ingestion points against payload abuse.
 
 ---
 
@@ -22,14 +24,20 @@ This project demonstrates scalable real-time notification delivery patterns usin
 
 ```mermaid
 flowchart TD
-    Client[Trigger Event / API Gateway] -->|POST /api/notify| Gateway(API Route)
+    Client[Trigger Event / API Gateway] -->|POST /api/notify| Gateway(API Route Gate)
 
     subgraph Persistence Layer
         Gateway -->|ZADD| Redis[(Upstash Redis Feed)]
     end
 
-    subgraph Real-Time Delivery
-        Gateway -->|Push Event| WSProxy[WebSocket / SSE Layer]
+    subgraph Fan-Out Engine
+        Gateway -->|Publish JSON| QStash{Upstash QStash}
+    end
+
+    subgraph Delivery Channels
+        QStash -->|Webhook| WorkerEmail[Simulated Email Worker]
+        QStash -->|Webhook| WorkerSMS[Simulated SMS Worker]
+        Gateway -->|Pub/Sub| WSProxy[WebSocket Proxy / SSE]
     end
 
     WSProxy -->|Real-time Push| UI[Next.js Client UI]
@@ -38,7 +46,7 @@ flowchart TD
     classDef engine fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#e0e7ff;
     classDef storage fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#d1fae5;
 
-    class WSProxy engine;
+    class QStash engine;
     class Redis storage;
 ```
 
@@ -49,13 +57,14 @@ flowchart TD
 - **Frontend Framework:** [Next.js 16](https://nextjs.org/) (App Router) + React 19
 - **Language:** TypeScript
 - **Styling & UI:** [Tailwind CSS](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/)
-- **State Persistence:** [Upstash Redis](https://upstash.com/redis) (Serverless Redis Data Layer)
+- **State Persistence:** [Upstash Redis](https://upstash.com/redis) (Serverless Data Layer)
+- **Message Queuing:** [Upstash QStash](https://upstash.com/qstash) (Serverless Fan-Out Engine)
 - **Real-time Pipeline:** Native WebSockets / Server-Sent Events (SSE)
 - **Deployment Target:** [Vercel](https://vercel.com/)
 
 ---
 
-### 🌐 Live Demo
+## 🌐 Live Demo
 
 [StaffNotify App](https://next-realtime-notifications.vercel.app/)
 
@@ -64,12 +73,14 @@ flowchart TD
 ## ✨ Features
 
 - Real-time notification delivery
+- Queue-driven asynchronous fan-out processing
 - Persistent notification feed using Redis
 - WebSocket/SSE client synchronization
 - Automatic reconnect with exponential backoff
 - Toast-based live notification UI
 - Notification unread indicators
-- Serverless-compatible architecture
+- Multi-channel worker simulation architecture
+- Serverless-compatible infrastructure
 - Edge-ready Redis persistence
 - Type-safe TypeScript implementation
 - Production-ready scalable design patterns
@@ -124,18 +135,35 @@ Add the following environment variables:
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 
+# Upstash QStash
+QSTASH_TOKEN=
+QSTASH_CURRENT_SIGNING_KEY=
+QSTASH_NEXT_SIGNING_KEY=
+
 # Public App URL
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ---
 
-### 4. Set Up Upstash Redis
+### 4. Set Up Upstash Services
+
+#### Redis Setup
 
 1. Create a Redis database at [Upstash Redis](https://upstash.com/redis)
 2. Copy:
    - REST URL
    - REST Token
+3. Add them to `.env.local`
+
+---
+
+#### QStash Setup
+
+1. Create a QStash project at [Upstash QStash](https://upstash.com/qstash)
+2. Copy:
+   - QSTASH_TOKEN
+   - Signing Keys
 3. Add them to `.env.local`
 
 ---
@@ -175,10 +203,10 @@ curl -X POST http://localhost:3000/api/notify \
 ### Expected Flow
 
 1. API route receives notification event
-2. Notification persisted into Redis feed
-3. Real-time layer propagates update
-4. Connected clients receive instant UI update
-5. Notification feed updates without refresh
+2. Payload persisted into Redis feed
+3. Event published to QStash
+4. Fan-out workers simulate Email/SMS delivery
+5. WebSocket/SSE pipeline pushes live update to connected clients
 
 ---
 
@@ -263,7 +291,7 @@ This project was built to explore:
 ## 🏗️ Distributed Systems Concepts Explored
 
 - Event-driven architecture
-- Fan-out message delivery
+- Queue-driven fan-out message delivery
 - Asynchronous worker processing
 - Real-time client synchronization
 - Redis-backed event persistence
@@ -276,6 +304,7 @@ This project was built to explore:
 ## ⚡ Key Engineering Highlights
 
 - Event-driven notification architecture
+- Queue-based asynchronous fan-out delivery
 - Real-time delivery with WebSockets/SSE
 - Redis sorted-set feed persistence
 - Exponential backoff reconnect strategy
@@ -309,6 +338,11 @@ Add the following variables inside your Vercel Project Settings:
 ```env
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
+
+QSTASH_TOKEN=
+QSTASH_CURRENT_SIGNING_KEY=
+QSTASH_NEXT_SIGNING_KEY=
+
 NEXT_PUBLIC_APP_URL=https://your-production-domain.vercel.app
 ```
 
@@ -329,6 +363,7 @@ vercel --prod
 This project intentionally uses:
 
 - Stateless serverless architecture
+- Queue-driven asynchronous processing
 - Redis-backed notification persistence
 - Edge-compatible infrastructure patterns
 - Lightweight real-time synchronization
